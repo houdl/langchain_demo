@@ -22,10 +22,12 @@ def main():
 @cl.on_message
 async def on_message(message: cl.Message):
     chain = cl.user_session.get("chain")
-    response = chain.run(question=message.content)
 
-    await cl.Message(content=response).send()
-
+    try:
+        response = chain.invoke({"question": message.content})
+        await cl.Message(content=response["text"]).send()
+    except Exception as e:
+        await cl.Message(content=f"An error occurred: {e}").send()
 
 @cl.oauth_callback
 def oauth_callback(
