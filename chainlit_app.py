@@ -2,12 +2,12 @@ import chainlit as cl
 import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.chains import LLMChain
 from typing import Dict, Optional
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 load_dotenv()
 
@@ -36,58 +36,84 @@ def main():
                      openai_api_base="https://openrouter.ai/api/v1",
                      openai_api_key=os.environ["OPEN_ROUTE_KEY"])
     
-    # Create prompt templates for with and without context
-    context_prompt = ChatPromptTemplate.from_template(
-        """You are a helpful assistant. Use the following context to answer the user's question.
-        
-        Context: {context}
-        
-        Question: {question}
-        
-        Answer the question based on the context provided."""
-    )
+    # Create chat prompt templates
+    base_prompt = ChatPromptTemplate.from_messages([
+        ("system", """You are a helpful AI assistant. Your responses should be:
+        1. Accurate and based on the provided context when available
+        2. Clear and well-structured
+        3. Concise yet informative
+        Please maintain a professional and friendly tone."""),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{input}")
+    ])
     
-    no_context_prompt = ChatPromptTemplate.from_template(
-        """You are a helpful assistant. Answer the user's question.
-        
-        Question: {question}"""
-    )
+    context_prompt = ChatPromptTemplate.from_messages([
+        ("system", """You are a helpful AI assistant. Your responses should be:
+        1. Accurate and based on the provided context when available
+        2. Clear and well-structured
+        3. Concise yet informative
+        Please maintain a professional and friendly tone."""),
+        ("system", "Use this context to inform your response:\n\n{context}"),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{input}")
+    ])
     
-    # Create two chains
-    context_chain = LLMChain(llm=llm, prompt=context_prompt)
-    no_context_chain = LLMChain(llm=llm, prompt=no_context_prompt)
-    
-    # Store chains and vector store in session
-    cl.user_session.set("context_chain", context_chain)
-    cl.user_session.set("no_context_chain", no_context_chain)
+    # Store components in session
+    cl.user_session.set("llm", llm)
     cl.user_session.set("vectorstore", qdrant)
+    cl.user_session.set("base_prompt", base_prompt)
+    cl.user_session.set("context_prompt", context_prompt)
+    cl.user_session.set("chat_history", [])
 
 @cl.on_message
 async def on_message(message: cl.Message):
-    context_chain = cl.user_session.get("context_chain")
-    no_context_chain = cl.user_session.get("no_context_chain")
+    llm = cl.user_session.get("llm")
     vectorstore = cl.user_session.get("vectorstore")
+    base_prompt = cl.user_session.get("base_prompt")
+    context_prompt = cl.user_session.get("context_prompt")
+    chat_history = cl.user_session.get("chat_history")
 
     try:
         # Perform similarity search
         search_results = vectorstore.similarity_search(message.content, k=2)
         
-        if search_results:
-            # If we found relevant context, use it
-            context = "\n".join([doc.page_content for doc in search_results])
-            response = context_chain.invoke({
-                "context": context,
-                "question": message.content
-            })
-        else:
-            # If no relevant context found, use the no-context chain
-            response = no_context_chain.invoke({
-                "question": message.content
-            })
-        
-        await cl.Message(content=response["text"]).send()
+        try:
+            if search_results:
+                # Use context prompt if we have search results
+                context = "\n".join([doc.page_content for doc in search_results])
+                prompt = context_prompt
+                response = llm.invoke(prompt.format_messages(
+                    context=context,
+                    chat_history=chat_history,
+                    input=message.content
+                ))
+            else:
+                # Use base prompt if no context available
+                prompt = base_prompt
+                response = llm.invoke(prompt.format_messages(
+                    chat_history=chat_history,
+                    input=message.content
+                ))
+            
+            if not response or not response.content:
+                raise ValueError("Empty response received from LLM")
+                
+            # Update chat history
+            chat_history.extend([
+                HumanMessage(content=message.content),
+                response
+            ])
+            cl.user_session.set("chat_history", chat_history)
+            
+            await cl.Message(content=response.content).send()
+            
+        except Exception as llm_error:
+            error_msg = f"Error processing response: {str(llm_error)}"
+            await cl.Message(content=error_msg).send()
+            
     except Exception as e:
-        await cl.Message(content=f"An error occurred: {e}").send()
+        error_msg = f"An error occurred during processing: {str(e)}"
+        await cl.Message(content=error_msg).send()
 
 @cl.oauth_callback
 def oauth_callback(
