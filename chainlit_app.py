@@ -74,13 +74,20 @@ async def on_message(message: cl.Message):
     chat_history = cl.user_session.get("chat_history")
 
     try:
-        # Perform similarity search
-        search_results = vectorstore.similarity_search(message.content, k=2)
+        # Perform similarity search with scores
+        search_results = vectorstore.similarity_search_with_score(message.content, k=2)
         
         try:
-            if search_results:
-                # Use context prompt if we have search results
-                context = "\n".join([doc.page_content for doc in search_results])
+            # Process and filter results
+            threshold = 0.6  # 相似度阈值
+            relevant_docs_with_scores = [
+                (doc, score) for doc, score in search_results 
+                if score >= threshold
+            ]
+            
+            if relevant_docs_with_scores:
+                # Create context from relevant documents
+                context = "\n\n".join([doc.page_content for doc, _ in relevant_docs_with_scores])
                 prompt = context_prompt
                 response = llm.invoke(prompt.format_messages(
                     context=context,
