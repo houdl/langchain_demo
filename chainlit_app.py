@@ -122,6 +122,7 @@ async def on_message(message: cl.Message):
         error_msg = f"An error occurred during processing: {str(e)}"
         await cl.Message(content=error_msg).send()
 
+# google 授权登陆
 @cl.oauth_callback
 def oauth_callback(
   provider_id: str,
