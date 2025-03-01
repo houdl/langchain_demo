@@ -1,0 +1,102 @@
+from langchain_openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import MemorySaver
+from langchain_core.tools import tool
+from langchain.tools import DuckDuckGoSearchRun
+
+class ReactAgent:
+    def __init__(self, model_name: str, api_base: str, api_key: str):
+        """初始化 React Agent
+        
+        Args:
+            model_name: 模型名称
+            api_base: API基础URL
+            api_key: API密钥
+        """
+        self.model_name = model_name
+        self.api_base = api_base
+        self.api_key = api_key
+        self.llm = None
+        self.agent = None
+        self.base_prompt = None
+        self._initialize()
+    
+    @staticmethod
+    @tool
+    def web_search(query: str):
+        """用于搜索需要实时信息或验证的内容。
+        适用场景：
+        - 需要最新新闻或当前事件信息
+        - 需要实时数据或统计信息
+        - 需要特定的事实验证
+        不要用于：
+        - 基础知识问题
+        - 简单的逻辑运算
+        - 可以直接回答的问题"""
+        search = DuckDuckGoSearchRun()
+        return search.run(query)
+    
+    def _create_base_prompt(self):
+        """创建基础提示模板"""
+        return ChatPromptTemplate.from_messages([
+            ("system", """你是一个有帮助的AI助手。请遵循以下原则：
+            1. 始终用中文回答问题
+            2. 回答要准确、清晰、简洁但信息丰富
+            3. 保持专业友好的语气
+            
+            工具使用指南：
+            1. 使用 'web_search' 工具的情况：
+               - 需要最新新闻或当前事件信息
+               - 需要实时数据或统计
+               - 需要验证具体事实
+               - 需要最新或特定信息时
+            
+            2. 直接回答（不使用工具）的情况：
+               - 基础知识问题
+               - 简单的逻辑或数学计算
+               - 可以基于已有知识可靠回答的问题
+            
+            在使用搜索工具前，请先判断是否真的需要外部信息。
+            所有回答必须用中文，即使搜索结果是英文也要翻译成中文。"""),
+            ("placeholder", "{messages}")
+        ])
+    
+    def _initialize(self):
+        """初始化 Agent 的所有组件"""
+        # 初始化 LLM
+        self.llm = ChatOpenAI(
+            model=self.model_name,
+            temperature=0.7,
+            openai_api_base=self.api_base,
+            openai_api_key=self.api_key
+        )
+        
+        # 创建基础提示模板
+        self.base_prompt = self._create_base_prompt()
+        
+        # 定义工具列表
+        tools = [self.web_search]
+        
+        # 初始化内存保存器
+        checkpointer = MemorySaver()
+        
+        # 创建 agent
+        self.agent = create_react_agent(
+            self.llm,  # 参数名从 llm 改为 model
+            tools,
+            checkpointer=checkpointer,
+            prompt=self.base_prompt
+        )
+    
+    def get_agent(self):
+        """获取初始化好的 agent"""
+        return self.agent
+    
+    def get_base_prompt(self):
+        """获取基础提示模板"""
+        return self.base_prompt
+    
+    def get_llm(self):
+        """获取初始化好的 LLM"""
+        return self.llm
