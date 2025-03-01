@@ -6,13 +6,14 @@ from langchain_core.tools import tool
 from langchain.tools import DuckDuckGoSearchRun
 
 class ReactAgent:
-    def __init__(self, model_name: str, api_base: str, api_key: str):
+    def __init__(self, model_name: str, api_base: str, api_key: str, checkpointer: MemorySaver = None):
         """初始化 React Agent
         
         Args:
             model_name: 模型名称
             api_base: API基础URL
             api_key: API密钥
+            checkpointer: 用于保存对话历史的 MemorySaver 实例
         """
         self.model_name = model_name
         self.api_base = api_base
@@ -20,7 +21,7 @@ class ReactAgent:
         self.llm = None
         self.agent = None
         self.base_prompt = None
-        self._initialize()
+        self._initialize(checkpointer)
     
     @staticmethod
     @tool
@@ -48,7 +49,7 @@ class ReactAgent:
             工具使用指南：
             1. 使用 'web_search' 工具的情况：
                - 需要最新新闻或当前事件信息
-               - 需要实时数据或统计
+               - 需要实时数据或统计，例如股票，天气等
                - 需要验证具体事实
                - 需要最新或特定信息时
             
@@ -62,8 +63,12 @@ class ReactAgent:
             ("placeholder", "{messages}")
         ])
     
-    def _initialize(self):
-        """初始化 Agent 的所有组件"""
+    def _initialize(self, checkpointer=None):
+        """初始化 Agent 的所有组件
+        
+        Args:
+            checkpointer: 可选的 checkpointer 实例，用于保存对话历史
+        """
         # 初始化 LLM
         self.llm = ChatOpenAI(
             model=self.model_name,
@@ -78,12 +83,13 @@ class ReactAgent:
         # 定义工具列表
         tools = [self.web_search]
         
-        # 初始化内存保存器
-        checkpointer = MemorySaver()
+        # 如果没有提供 checkpointer，创建一个新的
+        if checkpointer is None:
+            checkpointer = MemorySaver()
         
         # 创建 agent
         self.agent = create_react_agent(
-            self.llm,  # 参数名从 llm 改为 model
+            self.llm,
             tools,
             checkpointer=checkpointer,
             prompt=self.base_prompt

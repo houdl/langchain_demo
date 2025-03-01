@@ -1,8 +1,8 @@
 import os
-from langchain.document_loaders import TextLoader
+from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import Qdrant
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
 from dotenv import load_dotenv
 import pdb
@@ -12,7 +12,7 @@ load_dotenv()
 
 
 # 1. 准备数据
-loader = TextLoader("p2-uber-skan-new-singular-campaign-found.md")  # 替换为你的数据文件
+loader = TextLoader("docs/all-ping.md")  # 替换为你的数据文件
 documents = loader.load()
 
 text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
