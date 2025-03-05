@@ -5,21 +5,36 @@ import os
 from dotenv import load_dotenv
 from typing import Dict, Optional
 from langchain_core.messages import HumanMessage
-from langchain.schema.runnable.config import RunnableConfig
+from langchain_core.runnables.config import RunnableConfig
 from langgraph.checkpoint.memory import MemorySaver
 from agents.react_agent import ReactAgent
 from agents.qdrant_agent import QdrantAgent
 
 load_dotenv()
 
+@cl.on_chat_end
+async def on_chat_end():
+    """聊天会话结束时的清理"""
+    try:
+        react_agent = cl.user_session.get("react_agent")
+        if react_agent:
+            await react_agent.cleanup()
+    except Exception as e:
+        print(f"Cleanup error: {str(e)}")
+
+@cl.on_stop
+async def on_stop():
+    """应用停止时的清理"""
+    await on_chat_end()
+
 @cl.on_chat_start
-def main():
+async def main():
     current_user = __current_user()
     
     # 创建共享的 checkpointer
     checkpointer = MemorySaver()
     
-    # 创建 React Agent
+    # 创建并初始化 React Agent
     model_name = "google/gemini-2.0-flash-001"
     react_agent = ReactAgent(
         model_name=model_name,
@@ -27,6 +42,7 @@ def main():
         api_key=os.environ["OPEN_ROUTE_KEY"],
         checkpointer=checkpointer
     )
+    await react_agent.initialize(checkpointer)
     
     # 创建 Qdrant Agent
     qdrant_agent = QdrantAgent(
@@ -55,7 +71,7 @@ async def on_message(message: cl.Message):
             if context:
                 # 使用向量存储结果
                 prompt = qdrant_agent.get_prompt()
-                response = react_agent.get_llm().invoke(prompt.format_messages(
+                response = await react_agent.get_llm().ainvoke(prompt.format_messages(
                     context=context,
                     chat_history=chat_history,
                     input=message.content
@@ -65,7 +81,7 @@ async def on_message(message: cl.Message):
                     callbacks=[cl.LangchainCallbackHandler()],
                     configurable={"thread_id": cl.context.session.id}
                 )
-                final_state = react_agent.get_agent().invoke(
+                final_state = await react_agent.get_agent().ainvoke(
                     {"messages": [HumanMessage(content=message.content)]},
                     config=config
                 )

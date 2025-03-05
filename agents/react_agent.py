@@ -1,9 +1,10 @@
 from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.tools import tool
-from langchain.tools import DuckDuckGoSearchRun
+from langchain_community.tools import DuckDuckGoSearchRun
+from mcp_clients.math_client import MathClient
 
 class ReactAgent:
     def __init__(self, model_name: str, api_base: str, api_key: str, checkpointer: MemorySaver = None):
@@ -21,7 +22,7 @@ class ReactAgent:
         self.llm = None
         self.agent = None
         self.base_prompt = None
-        self._initialize(checkpointer)
+        self.math_client = None
     
     @staticmethod
     @tool
@@ -53,9 +54,14 @@ class ReactAgent:
                - 需要验证具体事实
                - 需要最新或特定信息时
             
-            2. 直接回答（不使用工具）的情况：
+            2. 使用数学工具的情况：
+               - 需要进行精确的数学计算
+               - add: 用于加法运算
+               - multiply: 用于乘法运算
+               - 当需要确保计算准确性时
+            
+            3. 直接回答（不使用工具）的情况：
                - 基础知识问题
-               - 简单的逻辑或数学计算
                - 可以基于已有知识可靠回答的问题
             
             在使用搜索工具前，请先判断是否真的需要外部信息。
@@ -63,8 +69,8 @@ class ReactAgent:
             ("placeholder", "{messages}")
         ])
     
-    def _initialize(self, checkpointer=None):
-        """初始化 Agent 的所有组件
+    async def initialize(self, checkpointer=None):
+        """异步初始化 Agent 的所有组件
         
         Args:
             checkpointer: 可选的 checkpointer 实例，用于保存对话历史
@@ -80,8 +86,13 @@ class ReactAgent:
         # 创建基础提示模板
         self.base_prompt = self._create_base_prompt()
         
+        # 初始化 math client
+        self.math_client = MathClient()
+        math_tools = await self.math_client.initialize()
+        
         # 定义工具列表
         tools = [self.web_search]
+        tools.extend(math_tools)
         
         # 如果没有提供 checkpointer，创建一个新的
         if checkpointer is None:
@@ -106,3 +117,8 @@ class ReactAgent:
     def get_llm(self):
         """获取初始化好的 LLM"""
         return self.llm
+    
+    async def cleanup(self):
+        """清理资源"""
+        if hasattr(self, 'math_client') and self.math_client:
+            await self.math_client.cleanup()
