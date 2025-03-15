@@ -5,25 +5,18 @@ from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.tools import tool
 from langchain_community.tools import DuckDuckGoSearchRun
 from bedrock_service import BedrockAIService, BedrockModel
-from mcp_clients.math_client import MathClient
+from mcp_client import get_mcp_tools
 
 class ReactAgent:
-    def __init__(self, model_name: str, api_base: str, api_key: str, checkpointer: MemorySaver = None):
+    def __init__(self, checkpointer: MemorySaver = None):
         """初始化 React Agent
 
         Args:
-            model_name: 模型名称
-            api_base: API基础URL
-            api_key: API密钥
             checkpointer: 用于保存对话历史的 MemorySaver 实例
         """
-        self.model_name = model_name
-        self.api_base = api_base
-        self.api_key = api_key
         self.llm = None
         self.agent = None
         self.base_prompt = None
-        self.math_client = None
         self.checkpointer = checkpointer
 
     @staticmethod
@@ -71,7 +64,7 @@ class ReactAgent:
             ("placeholder", "{messages}")
         ])
 
-    async def initialize(self, checkpointer=None):
+    def initialize(self, checkpointer=None):
         """异步初始化 Agent 的所有组件
 
         Args:
@@ -85,12 +78,11 @@ class ReactAgent:
         self.base_prompt = self._create_base_prompt()
 
         # 初始化 math client
-        self.math_client = MathClient()
-        math_tools = await self.math_client.initialize()
+        mcp_tools = get_mcp_tools()
 
         # 定义工具列表
         tools = [self.web_search]
-        tools.extend(math_tools)
+        tools.extend(mcp_tools)
 
         # 创建 agent
         self.agent = create_react_agent(

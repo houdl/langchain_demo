@@ -28,28 +28,21 @@ async def on_stop():
     await on_chat_end()
 
 @cl.on_chat_start
-async def main():
+async def on_chat_start():
     current_user = __current_user()
 
     # 创建共享的 checkpointer
     checkpointer = MemorySaver()
 
-    # 创建并初始化 React Agent
-    model_name = "deepseek-ai/DeepSeek-V2.5"
-    react_agent = ReactAgent(
-        model_name=model_name,
-        api_base=os.getenv("DEEPSEEK_API_BASE"),
-        api_key=os.getenv("DEEPSEEK_API_KEY"),
-        checkpointer=checkpointer
-    )
-    await react_agent.initialize()
-
     # Store components in session
-    cl.user_session.set("react_agent", react_agent)
+    cl.user_session.set("checkpointer", checkpointer)
 
 @cl.on_message
 async def on_message(message: cl.Message):
-    react_agent = cl.user_session.get("react_agent")
+    checkpointer = cl.user_session.get("checkpointer")
+    # 创建并初始化 React Agent
+    react_agent = ReactAgent(checkpointer=checkpointer)
+    react_agent.initialize()
 
     try:
         config=RunnableConfig(
