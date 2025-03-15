@@ -4,4 +4,15 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "boto3>=1.37.13",
+    "chainlit>=2.4.1",
+    "httpx[socks]>=0.28.1",
+    "langchain-community>=0.3.19",
+    "langchain-core>=0.3.45",
+    "langchain-mcp-adapters>=0.0.4",
+    "langchain-openai>=0.3.8",
+    "langgraph>=0.3.11",
+    "litellm>=1.63.11",
+    "qdrant-client>=1.13.3",
+]

@@ -4,6 +4,7 @@ from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.tools import tool
 from langchain_community.tools import DuckDuckGoSearchRun
+from bedrock_service import BedrockAIService, BedrockModel
 from mcp_clients.math_client import MathClient
 
 class ReactAgent:
@@ -77,12 +78,8 @@ class ReactAgent:
             checkpointer: checkpointer 实例，用于保存对话历史
         """
         # 初始化 LLM
-        self.llm = ChatOpenAI(
-            model=self.model_name,
-            temperature=0.7,
-            openai_api_base=self.api_base,
-            openai_api_key=self.api_key
-        )
+        self.llm = BedrockAIService().llm_converse(model=BedrockModel.PRO_MODEL_ID.value)
+
 
         # 创建基础提示模板
         self.base_prompt = self._create_base_prompt()
