@@ -48,6 +48,15 @@ def __system_prompt() -> Any:
            - multiply: 用于乘法运算
            - 当需要确保计算准确性时
 
+        3. 使用 Jampp 工具的情况：
+           - get_jampp_all_supported_clients: 获取所有支持的广告客户端列表
+             * 用于查看可用的客户端
+             * 用于确认客户端名称是否有效
+           - get_jampp_reports: 获取广告报告数据
+             * 需要提供：客户端名称、开始日期、结束日期
+             * 返回广告活动的详细数据（展示、点击、转化、支出等）
+             * 用于分析广告效果和投资回报
+
         4. 使用 TestTool 工具的情况：
            - 当询问test tool的时候时候
 

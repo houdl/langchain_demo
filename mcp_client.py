@@ -43,15 +43,20 @@ def create_mcp_client():
               ],
               "transport": "stdio",
             },
-            # "flux-schnell": {
-            #     "command": "bun",
-            #     "args": ["run", flux_schnell_command_path],
-            #     "transport": "stdio",
-            #     "env": {
-            #         **default_env,
-            #         "REPLICATE_API_TOKEN": os.environ.get("REPLICATE_API_TOKEN", ""),
-            #     },
-            # },
+            "jampp": {
+                "command": "uv",
+                "args": [
+                    "--directory",
+                    os.path.join(current_dir, "mcp_servers", "servers", "jampp"),
+                    "run",
+                    "jampp",
+                ],
+                "transport": "stdio",
+                "env": {
+                    **default_env,
+                    "TEXTNOW_JAMPP_API_CLIENT_SECRET": os.environ.get("TEXTNOW_JAMPP_API_CLIENT_SECRET", ""),
+                },
+            },
             "math": {
                 "command": "python",
                 "args": [os.path.join(current_dir, "mcp_servers", "math_server.py")],
