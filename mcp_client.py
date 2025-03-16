@@ -36,12 +36,21 @@ def create_mcp_client():
     return MultiServerMCPClient(
         {
             "everything": {
-              "command": "npx",
-              "args": [
-                "-y",
-                "@modelcontextprotocol/server-everything",
-              ],
-              "transport": "stdio",
+                "command": "npx",
+                "args": [
+                    "-y",
+                    "@modelcontextprotocol/server-everything",
+                ],
+                "transport": "stdio",
+            },
+            "postgres": {
+                "command": "npx",
+                "args": [
+                    "-y",
+                    "@modelcontextprotocol/server-postgres",
+                    os.environ.get("POSTGRES_DATABASE", ""),
+                ],
+                "transport": "stdio",
             },
             "jampp": {
                 "command": "uv",

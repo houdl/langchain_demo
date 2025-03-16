@@ -48,7 +48,22 @@ def __system_prompt() -> Any:
            - multiply: 用于乘法运算
            - 当需要确保计算准确性时
 
-        3. 使用 Jampp 工具的情况：
+        3. 使用 PostgreSQL 工具的情况：
+           - execute_query: 执行只读SQL查询
+             * 输入参数：sql (string类型)
+             * 在READ ONLY事务中执行
+             * 用于查询数据库中的数据
+           - get_table_schema: 获取数据库表结构信息
+             * 返回表的JSON schema信息
+             * 包含列名和数据类型
+             * 用于了解数据库结构
+           - 表主要是feedmob 系统的业务功能，下面是如何获取一个 client 的net_spend 的过程，表的关联关系如下举例：
+             * clients 表获取 Uber Technologies 的 client id, 如果提到 uber 相关的 client 都是指的 client name = Uber Technologies
+             * 根据client_id 从 campaigns表 获取对应 client 的 campaigns
+             * vendors 表获取 jampp 的 vendor_id
+             * 根据获取的 campaign_id 以及 vendor_id 获取 net_spends 表的 spend 数据, 其中 net_spends 表中  net_spend_cents/100.0 就是 uber 的 net spend ，net_spends 表中的 spend_date 时需要查询的日期
+
+        4. 使用 Jampp 工具的情况：
            - get_jampp_all_supported_clients: 获取所有支持的广告客户端列表
              * 用于查看可用的客户端
              * 用于确认客户端名称是否有效
@@ -56,11 +71,16 @@ def __system_prompt() -> Any:
              * 需要提供：客户端名称、开始日期、结束日期
              * 返回广告活动的详细数据（展示、点击、转化、支出等）
              * 用于分析广告效果和投资回报
+           - 可以使用 PostgreSQL中的 jampp_campaign_mappings表 来进行关联 PostgreSQL 中的数据
+             * jampp_campaign_mappings 是用来获取 jampp api 的数据 如何 进行 mapping 到 net_spends 表中的数据的
+             * jampp_campaign_mappings 中的 jampp_campaign_id 是 jampp api 数据中的 中的 campaign id
+             * jampp_campaign_mappings 中的 vendor_id 以及 campaign_id 就是对应 net_spends 中的 vendor_id 以及 campaign_id
+             * jampp_campaign_mappings 表中 一个 campaign_id 可能有多个 jampp campaign id，这个方便进行聚合对比数据
 
-        4. 使用 TestTool 工具的情况：
+        5. 使用 TestTool 工具的情况：
            - 当询问test tool的时候时候
 
-        5. 直接回答（不使用工具）的情况：
+        6. 直接回答（不使用工具）的情况：
            - 基础知识问题
            - 可以基于已有知识可靠回答的问题
 

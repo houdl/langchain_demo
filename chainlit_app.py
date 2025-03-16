@@ -30,7 +30,8 @@ async def on_message(message: cl.Message):
     try:
         config=RunnableConfig(
             callbacks=[cl.LangchainCallbackHandler()],
-            configurable={"thread_id": '12122'}
+            configurable={"thread_id": cl.context.session.id},
+            recursion_limit=100,
         )
         final_state = await chainlit_agent.ainvoke(
             {"messages": [HumanMessage(content=message.content)]},
