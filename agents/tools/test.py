@@ -2,6 +2,7 @@ from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 from typing import Type
 
+# StructuredTool 也可以尝试写一个
 
 class TestInput(BaseModel):
     query: str = Field(description="The input query to the tool")

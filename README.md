@@ -2,14 +2,18 @@
 # 使用 nv 进行环境设置
 
 
-# 导入数据
-python3.12 create_qdrant_db.py
+# 增加配置
 
-# 如何执行
 ```
-  chainlit run chainlit_app.py -w
+ cp .env.example .env
 ```
-或
+# 如何启动
 ```
   uv run run.py
+```
+
+# 访问聊天页面
+
+```
+http://localhost:8000/chainlit/
 ```

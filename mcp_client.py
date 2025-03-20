@@ -43,15 +43,15 @@ def create_mcp_client():
                 ],
                 "transport": "stdio",
             },
-            "postgres": {
-                "command": "npx",
-                "args": [
-                    "-y",
-                    "@modelcontextprotocol/server-postgres",
-                    os.environ.get("POSTGRES_DATABASE", ""),
-                ],
-                "transport": "stdio",
-            },
+            # "postgres": {
+            #     "command": "npx",
+            #     "args": [
+            #         "-y",
+            #         "@modelcontextprotocol/server-postgres",
+            #         os.environ.get("POSTGRES_DATABASE", ""),
+            #     ],
+            #     "transport": "stdio",
+            # },
             "jampp": {
                 "command": "uv",
                 "args": [
@@ -79,6 +79,20 @@ def create_mcp_client():
                     **default_env,
                     "IRON_SOURCE_SECRET_KEY": os.environ.get("IRON_SOURCE_SECRET_KEY", ""),
                     "IRON_SOURCE_REFRESH_KEY": os.environ.get("IRON_SOURCE_REFRESH_KEY", ""),
+                },
+            },
+            "feedmob": {
+                "command": "uv",
+                "args": [
+                    "--directory",
+                    os.path.join(current_dir, "mcp_servers", "servers", "feedmob"),
+                    "run",
+                    "feedmob",
+                ],
+                "transport": "stdio",
+                "env": {
+                    **default_env,
+                    "DATABASE_URL": os.environ.get("POSTGRES_DATABASE", ""),
                 },
             },
             "math": {

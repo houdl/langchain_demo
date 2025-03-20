@@ -42,45 +42,94 @@ def __system_prompt() -> Any:
            - 需要验证具体事实
            - 需要最新或特定信息时
 
-        2. 使用数学工具的情况：
+        3. 使用数学工具的情况：
            - 需要进行精确的数学计算
            - add: 用于加法运算
            - multiply: 用于乘法运算
            - 当需要确保计算准确性时
 
-        3. 使用 PostgreSQL 工具的情况：
-           - execute_query: 执行只读SQL查询
-             * 输入参数：sql (string类型)
-             * 在READ ONLY事务中执行
-             * 用于查询数据库中的数据
-           - get_table_schema: 获取数据库表结构信息
-             * 返回表的JSON schema信息
-             * 包含列名和数据类型
-             * 用于了解数据库结构
-           - 表主要是feedmob 系统的业务功能，下面是如何获取一个 client 的net_spend 的过程，表的关联关系如下举例：
-             * clients 表获取 Uber Technologies 的 client id, 如果提到 uber 相关的 client 都是指的 client name = Uber Technologies
-             * 根据client_id 从 campaigns表 获取对应 client 的 campaigns
-             * vendors 表获取 jampp 的 vendor_id
-             * 根据获取的 campaign_id 以及 vendor_id 获取 net_spends 表的 spend 数据, 其中 net_spends 表中  net_spend_cents/100.0 就是 uber 的 net spend ，net_spends 表中的 spend_date 时需要查询的日期
+        4. 使用 Feedmob 工具的情况：
+           - get_client_infos: 获取客户详细信息
+             * 需要提供：
+               - 客户名称（支持模糊匹配）, 如果问 client Uber 都是指的 client_name = Uber Technologies
+             * 返回客户信息列表，包含：
+               - 客户ID（id）
+               - 客户名称（name）
+               - 创建时间（created_at）
+               - 更新时间（updated_at）
+               - 其他客户相关字段
+             * 使用场景：
+               - 查询客户基本信息
+               - 验证客户是否存在
+               - 获取客户ID用于其他操作
+             * 约束条件：
+               - 客户名称不能为空
+               - 支持模糊匹配（使用ilike）
+               - 返回空列表如果找不到匹配的客户
 
-        4. 使用 Jampp 工具的情况：
+           - get_jampp_campaign_mappings: 获取Jampp广告活动的映射关系
+             * 需要提供：
+               - 客户名称（必填）
+               - 供应商名称（可选，默认为"Jampp"）
+             * 返回映射记录列表，包含：
+               - 客户名称（client_name）
+               - 供应商名称（vendor_name）
+               - campaign_id（campaign_id，对应net_spends表）
+               - campaign_name（campaign_name，对应net_spends表）
+               - Jampp活动ID（jampp_campaign_id，对应Jampp系统）
+               - 客户ID（client_id）
+               - 供应商ID（vendor_id）
+             * 使用场景：
+               - 获取Jampp campaign id 与feedmob 中的 campaign_id 的 mapping 关系
+               - 验证活动映射配置
+               - 数据同步和对账
+             * 约束条件：
+               - 客户名称不能为空
+               - 返回空列表如果找不到匹配的映射关系
+
+           - get_client_vendor_direct_spend: 获取客户与供应商之间的直接支出数据
+             * 需要提供：client_name、vendor_name、start_date、end_date, 如果没有提供，就需要询问user这些信息，不要自己猜测
+             * 返回支出记录列表，包含：
+               - client_name
+               - vendor_name
+               - click_url_id
+               - campaign_id
+               - campaign_name
+               - spend_date
+               - 总额（gross）
+               - 净支出（net_spend）
+               - 活动ID（campaign_id）
+             * 数据来源：
+               - 从 PostgreSQL 数据库获取数据
+               - 使用 net_spends 表获取支出数据
+               - 自动处理多个campaign的数据聚合
+             * 数据库表关系：
+               - net_spends: 存储支出数据
+               - clients: 存储客户信息
+               - vendors: 存储供应商信息
+               - campaigns: 存储活动信息
+             * 使用场景：
+               - 分析特定客户与供应商之间的支出情况
+               - 追踪支出趋势和模式
+               - 生成财务报告
+             * 约束条件：
+               - 日期范围必须有效（结束日期不能早于开始日期）
+               - 客户名称和供应商名称不能为空
+               - 返回空列表如果找不到匹配的映射关系
+
+        5. 使用 Jampp 工具的情况：
            - get_jampp_all_supported_clients: 获取所有支持的广告客户端列表
              * 用于查看可用的客户端
              * 用于确认客户端名称是否有效
            - get_jampp_reports: 获取广告报告数据
-             * 需要提供：客户端名称、开始日期、结束日期
+             * 需要提供：客户端名称、开始日期、结束日期, 如果没有提供，就需要询问user这些信息，不要自己猜测
              * 返回广告活动的详细数据（展示、点击、转化、支出等）
              * 用于分析广告效果和投资回报
-           - 可以使用 PostgreSQL中的 jampp_campaign_mappings表 来进行关联 PostgreSQL 中的数据
-             * jampp_campaign_mappings 是用来获取 jampp api 的数据 如何 进行 mapping 到 net_spends 表中的数据的
-             * jampp_campaign_mappings 中的 jampp_campaign_id 是 jampp api 数据中的 中的 campaign id
-             * jampp_campaign_mappings 中的 vendor_id 以及 campaign_id 就是对应 net_spends 中的 vendor_id 以及 campaign_id
-             * jampp_campaign_mappings 表中 一个 campaign_id 可能有多个 jampp campaign id，这个方便进行聚合对比数据
 
-        5. 使用 TestTool 工具的情况：
+        6. 使用 TestTool 工具的情况：
            - 当询问test tool的时候时候
 
-        6. 使用 Iron Source 工具的情况：
+        7. 使用 Iron Source 工具的情况：
            - fetch_reports: 获取特定广告活动的报告数据
              * 需要提供：开始日期、结束日期、campaign IDs列表
              * 返回广告活动的详细数据（展示、点击、完成、安装、支出等）
@@ -94,12 +143,11 @@ def __system_prompt() -> Any:
              * 返回所有广告活动的数据
              * 用于全面分析广告效果
 
-        7. 直接回答（不使用工具）的情况：
+        8. 直接回答（不使用工具）的情况：
            - 基础知识问题
            - 可以基于已有知识可靠回答的问题
 
-        在使用搜索工具前，请先判断是否真的需要外部信息。
-        所有回答必须用中文，即使搜索结果是英文也要翻译成中文。"""),
+        在使用搜索工具前，请先判断是否真的需要外部信息。"""),
         ("placeholder", "{messages}")
     ])
 
