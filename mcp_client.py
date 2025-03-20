@@ -66,6 +66,21 @@ def create_mcp_client():
                     "TEXTNOW_JAMPP_API_CLIENT_SECRET": os.environ.get("TEXTNOW_JAMPP_API_CLIENT_SECRET", ""),
                 },
             },
+            "iron_source": {
+                "command": "uv",
+                "args": [
+                    "--directory",
+                    os.path.join(current_dir, "mcp_servers", "servers", "iron_source"),
+                    "run",
+                    "iron_source",
+                ],
+                "transport": "stdio",
+                "env": {
+                    **default_env,
+                    "IRON_SOURCE_SECRET_KEY": os.environ.get("IRON_SOURCE_SECRET_KEY", ""),
+                    "IRON_SOURCE_REFRESH_KEY": os.environ.get("IRON_SOURCE_REFRESH_KEY", ""),
+                },
+            },
             "math": {
                 "command": "python",
                 "args": [os.path.join(current_dir, "mcp_servers", "math_server.py")],
