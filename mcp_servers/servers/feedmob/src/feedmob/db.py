@@ -72,6 +72,62 @@ def get_db_jampp_campaign_mappings(client_name: str, vendor_name: str) -> List[D
         )
         return [row._mapping for row in result]
 
+def get_db_direct_spend_job_stats(
+    client_ids: List[int] = None,
+    vendor_ids: List[int] = None,
+    click_url_ids: List[int] = None,
+    job: str = None
+) -> List[Dict[str, Any]]:
+    """Get direct spend job stats from the database.
+
+    Args:
+        client_ids (List[int], optional): List of client IDs to filter by
+        vendor_ids (List[int], optional): List of vendor IDs to filter by
+        click_url_ids (List[int], optional): List of click URL IDs to filter by
+        job (str, optional): Job name to filter by
+
+    Returns:
+        List[Dict[str, Any]]: List of direct spend job stats records
+    """
+    engine = get_db_engine()
+    conditions = []
+    params: Dict[str, Any] = {}
+
+    query = text("""
+        SELECT dsjs.*,
+               array_to_string(dsjs.pm_users, ',') as pm_users_str,
+               array_to_string(dsjs.pa_users, ',') as pa_users_str,
+               array_to_string(dsjs.click_url_ids, ',') as click_url_ids_str,
+               array_to_string(dsjs.client_ids, ',') as client_ids_str,
+               array_to_string(dsjs.vendor_ids, ',') as vendor_ids_str
+        FROM direct_spend_job_stats dsjs
+        WHERE deleted_at IS NULL
+    """)
+
+    if client_ids:
+        conditions.append("dsjs.client_ids && :client_ids")
+        params["client_ids"] = client_ids
+
+    if vendor_ids:
+        conditions.append("dsjs.vendor_ids && :vendor_ids")
+        params["vendor_ids"] = vendor_ids
+
+    if click_url_ids:
+        conditions.append("dsjs.click_url_ids && :click_url_ids")
+        params["click_url_ids"] = click_url_ids
+
+    if job:
+        conditions.append("dsjs.job = :job")
+        params["job"] = job
+
+    if conditions:
+        query = text(str(query) + " AND " + " AND ".join(conditions))
+
+    with engine.connect() as conn:
+        result = conn.execute(query, params)
+        return [dict(row._mapping) for row in result.fetchall()]
+
+
 def get_db_net_spends(client_name: str, vendor_name: str, start_date: str, end_date: str) -> List[Dict[str, Any]]:
     """Get net spends for a client and vendor between dates.
 

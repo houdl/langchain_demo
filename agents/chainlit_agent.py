@@ -49,6 +49,8 @@ def __system_prompt() -> Any:
            - 当需要确保计算准确性时
 
         4. 使用 Feedmob 工具的情况：
+           - 如果 提到 feedmob 中的 Uber 都是是指的 Uber Technologies，请使用这个替换来查询数据等信息
+           - 如果询问对比 spend, 如果用户没有说具体的日期，请询问用户要查询对比的日期
            - get_client_infos: 获取客户详细信息
              * 需要提供：
                - 客户名称（支持模糊匹配）, 如果问 client Uber 都是指的 client_name = Uber Technologies
@@ -116,6 +118,37 @@ def __system_prompt() -> Any:
                - 日期范围必须有效（结束日期不能早于开始日期）
                - 客户名称和供应商名称不能为空
                - 返回空列表如果找不到匹配的映射关系
+
+           - get_direct_spend_job_stats: 获取直接支出任务统计信息
+             * 需要提供（至少一个）：
+               - client_ids: 客户ID列表
+               - vendor_ids: 供应商ID列表
+               - click_url_ids: 点击URL ID列表
+               - job: 任务名称
+             * 返回任务统计记录，包含：
+               - click_url_ids: 点击URL ID数组
+               - client_ids: 客户ID数组
+               - vendor_ids: 供应商ID数组
+               - status: 任务状态（默认：1）
+               - data_source: 数据来源
+               - job: 任务名称
+               - notes: 任务备注
+               - schedule: 任务计划
+               - pm_users: PM用户数组
+               - pa_users: PA用户数组
+               - gross_spend_source: 总支出数据来源（对应客户的数据源，用于生成net_spends表中的gross_spend）
+               - net_spend_source: 净支出数据来源（对应供应商的数据源，用于生成net_spends表中的net_spend）
+               - date_from: 开始日期（默认：1）
+               - date_to: 结束日期（默认：1）
+               - risk: 风险标记（默认：false）
+             * 使用场景：
+               - 检查spend数据来源
+               - 验证net_spends表中数据的生成来源
+               - 追踪支出数据的同步任务
+             * 约束条件：
+               - 必须提供至少一个过滤参数
+               - 数组参数必须是整数列表
+               - 不返回已删除的记录
 
         5. 使用 Jampp 工具的情况：
            - get_jampp_all_supported_clients: 获取所有支持的广告客户端列表
