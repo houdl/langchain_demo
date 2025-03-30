@@ -1,0 +1,21 @@
+[project]
+name = "inmobi"
+version = "0.1.0"
+description = "Inmobi vendor/partner report"
+readme = "README.md"
+requires-python = ">=3.12.0"
+dependencies = [
+ "httpx>=0.27.2",
+ "mcp>=1.3.0",
+ "tenacity>=9.0.0",
+]
+[[project.authors]]
+name = "Richard Hao"
+email = "richard@feedmob.com"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.scripts]
+inmobi = "inmobi:main"

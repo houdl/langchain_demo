@@ -81,6 +81,21 @@ def create_mcp_client():
                     "IRON_SOURCE_REFRESH_KEY": os.environ.get("IRON_SOURCE_REFRESH_KEY", ""),
                 },
             },
+            "inmobi": {
+                "command": "uv",
+                "args": [
+                    "--directory",
+                    os.path.join(current_dir, "mcp_servers", "servers", "inmobi"),
+                    "run",
+                    "inmobi",
+                ],
+                "transport": "stdio",
+                "env": {
+                    **default_env,
+                    "INMOBI_CLIENT_ID": os.environ.get("INMOBI_CLIENT_ID", ""),
+                    "INMOBI_CLIENT_SECRET": os.environ.get("INMOBI_CLIENT_SECRET", ""),
+                },
+            },
             "feedmob": {
                 "command": "uv",
                 "args": [
