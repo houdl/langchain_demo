@@ -43,15 +43,15 @@ def create_mcp_client():
                 ],
                 "transport": "stdio",
             },
-            # "postgres": {
-            #     "command": "npx",
-            #     "args": [
-            #         "-y",
-            #         "@modelcontextprotocol/server-postgres",
-            #         os.environ.get("POSTGRES_DATABASE", ""),
-            #     ],
-            #     "transport": "stdio",
-            # },
+            "postgres": {
+                "command": "npx",
+                "args": [
+                    "-y",
+                    "@modelcontextprotocol/server-postgres",
+                    os.environ.get("POSTGRES_DATABASE", ""),
+                ],
+                "transport": "stdio",
+            },
             "jampp": {
                 "command": "uv",
                 "args": [
@@ -96,20 +96,20 @@ def create_mcp_client():
                     "INMOBI_CLIENT_SECRET": os.environ.get("INMOBI_CLIENT_SECRET", ""),
                 },
             },
-            "feedmob": {
-                "command": "uv",
-                "args": [
-                    "--directory",
-                    os.path.join(current_dir, "mcp_servers", "servers", "feedmob"),
-                    "run",
-                    "feedmob",
-                ],
-                "transport": "stdio",
-                "env": {
-                    **default_env,
-                    "DATABASE_URL": os.environ.get("POSTGRES_DATABASE", ""),
-                },
-            },
+            # "feedmob": {
+            #     "command": "uv",
+            #     "args": [
+            #         "--directory",
+            #         os.path.join(current_dir, "mcp_servers", "servers", "feedmob"),
+            #         "run",
+            #         "feedmob",
+            #     ],
+            #     "transport": "stdio",
+            #     "env": {
+            #         **default_env,
+            #         "DATABASE_URL": os.environ.get("POSTGRES_DATABASE", ""),
+            #     },
+            # },
             "math": {
                 "command": "python",
                 "args": [os.path.join(current_dir, "mcp_servers", "math_server.py")],
