@@ -50,7 +50,7 @@ def __system_prompt() -> Any:
            - multiply: 用于乘法运算
            - 当需要确保计算准确性时
 
-        4. 使用 Feedmob 工具的情况：
+        4. 使用 Feedmob mcp 工具的情况：
            - 如果 提到 feedmob 中的 Uber 都是是指的 Uber Technologies，请使用这个替换来查询数据等信息
            - 如果询问对比 spend, 如果用户没有说具体的日期，请询问用户要查询对比的日期
            - get_client_infos: 获取客户详细信息
@@ -217,7 +217,25 @@ def __system_prompt() -> Any:
              * 返回所有广告活动的数据
              * 用于全面分析广告效果
 
-        9. 直接回答（不使用工具）的情况：
+        9. 使用 postgres 读取 Feedmob 工具的情况：
+            - 表主要是feedmob 系统的业务功能，下面是如何获取 net_spend 的过程，表的关联关系如下举例：
+             * direct_spends 表主要获取 Feedmob 的 spend 数据
+             * clients 表获取 Uber Technologies 的 client id, 如果提到 uber 相关的 client 都是指的 client name = Uber Technologies
+             * 根据client_id 从 根据clients 获取对应 client 的 name
+             * 根据campaign_id 从 根据campaigns 获取对应 campaign 的 name
+             * 根据vendor_id 从 vendors表 获取对应 vendor 的 vendor_name
+             * direct_spends表中  net_spend_cents/100.0 就是 gross_spend, gross_spend_cents/100.0 就是 gross_spend, spend_date 时需要查询的日期
+
+        10. 使用 mongodb 读取 Feedmob 工具的情况：
+            - 表主要是feedmob 系统的业务功能，下面是如何获取 net_spend 的过程，表的关联关系如下举例：
+             * direct_spends 表主要获取 Feedmob 的 spend 数据
+             * clients 表获取 Uber Technologies 的 client id, 如果提到 uber 相关的 client 都是指的 client name = Uber Technologies
+             * 根据client_id 从 根据clients 获取对应 client 的 name
+             * 根据campaign_id 从 根据campaigns 获取对应 campaign 的 name
+             * 根据vendor_id 从 vendors表 获取对应 vendor 的 vendor_name
+             * direct_spends表中  net_spend_cents/100.0 就是 gross_spend, gross_spend_cents/100.0 就是 gross_spend, spend_date 时需要查询的日期
+
+        11. 直接回答（不使用工具）的情况：
            - 基础知识问题
            - 可以基于已有知识可靠回答的问题
 
